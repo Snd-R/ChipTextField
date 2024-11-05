@@ -21,7 +21,3 @@ rootProject.name = "ChipTextField"
 include ':chiptextfield-core'
 include ':chiptextfield'
 include ':chiptextfield-m3'
-include ':sample:shared'
-include ':sample:android'
-include ':sample:desktop'
-include ':sample:webApp'
