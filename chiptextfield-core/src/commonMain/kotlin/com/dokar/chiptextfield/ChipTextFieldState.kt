@@ -2,6 +2,7 @@ package com.dokar.chiptextfield
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -45,7 +46,7 @@ class ChipTextFieldState<T : Chip>(
 
     internal var textFieldFocusState by mutableStateOf(TextFieldFocusState.None)
 
-    val isTextFieldFocused get() = textFieldFocusState == TextFieldFocusState.Focused
+    val isTextFieldFocused by derivedStateOf { textFieldFocusState == TextFieldFocusState.Focused }
 
     var chips by mutableStateOf(chips)
 

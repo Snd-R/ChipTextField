@@ -42,6 +42,8 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalFocusManager
@@ -353,91 +355,97 @@ fun <T : Chip> BasicChipTextField(
         }
     }
 
-    decorationBox {
-        FlowRow(
-            modifier = modifier
-                .pointerInput(value) {
-                    detectTapGestures(
-                        onTap = {
-                            if (!editable) return@detectTapGestures
-                            keyboardController?.show()
-                            runCatching { textFieldFocusRequester.requestFocus() }
-                            state.updateFocusedChip(null)
-                            state.focusTextField()
-                            // Move cursor to the end
-                            val selection = value.text.length
-                            onValueChange(value.copy(selection = TextRange(selection)))
-                            scope.launch { bringLastIntoViewRequester.value.bringIntoView() }
-                        },
-                    )
-                },
-            horizontalArrangement = Arrangement.spacedBy(chipHorizontalSpacing),
-            verticalArrangement = Arrangement.spacedBy(chipVerticalSpacing),
-        ) {
-            val focuses = remember { StableHolder(mutableSetOf<FocusInteraction.Focus>()) }
-            Chips(
-                state = state,
-                enabled = enabled,
-                readOnly = readOnly || readOnlyChips,
-                onRemoveRequest = { state.removeChip(it) },
-                onFocused = {
-                    if (!focuses.value.contains(it)) {
-                        focuses.value.add(it)
-                        interactionSource.tryEmit(it)
-                    }
-                },
-                onFreeFocus = {
-                    focuses.value.remove(it)
-                    interactionSource.tryEmit(FocusInteraction.Unfocus(it))
-                },
-                onLoseFocus = {
-                    scope.launch {
-                        awaitFrame()
+    Box(
+        modifier = modifier
+            .pointerHoverIcon(PointerIcon.Text)
+            .pointerInput(value) {
+                detectTapGestures(
+                    onTap = {
+                        if (!editable) return@detectTapGestures
+                        keyboardController?.show()
                         runCatching { textFieldFocusRequester.requestFocus() }
-                    }
-                    state.updateFocusedChip(null)
-                },
-                onChipClick = onChipClick,
-                onChipLongClick = onChipLongClick,
-                textStyle = textStyle,
-                chipStyle = chipStyle,
-                chipLeadingIcon = chipLeadingIcon,
-                chipTrailingIcon = chipTrailingIcon,
-                bringLastIntoViewRequester = bringLastIntoViewRequester,
-            )
-
-            Input(
-                state = state,
-                onSubmit = {
-                    val chip = onSubmit(it)
-                    if (chip != null) {
+                        state.updateFocusedChip(null)
+                        state.focusTextField()
+                        // Move cursor to the end
+                        val selection = value.text.length
+                        onValueChange(value.copy(selection = TextRange(selection)))
+                        scope.launch { bringLastIntoViewRequester.value.bringIntoView() }
+                    },
+                )
+            }
+    ) {
+        decorationBox {
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(chipHorizontalSpacing),
+                verticalArrangement = Arrangement.spacedBy(chipVerticalSpacing),
+            ) {
+                val focuses = remember { StableHolder(mutableSetOf<FocusInteraction.Focus>()) }
+                Chips(
+                    state = state,
+                    enabled = enabled,
+                    readOnly = readOnly || readOnlyChips,
+                    onRemoveRequest = { state.removeChip(it) },
+                    onFocused = {
+                        if (!focuses.value.contains(it)) {
+                            focuses.value.add(it)
+                            interactionSource.tryEmit(it)
+                        }
+                    },
+                    onFreeFocus = {
+                        focuses.value.remove(it)
+                        interactionSource.tryEmit(FocusInteraction.Unfocus(it))
+                    },
+                    onLoseFocus = {
                         scope.launch {
                             awaitFrame()
-                            bringLastIntoViewRequester.value.bringIntoView()
-                            state.focusTextField()
+                            runCatching { textFieldFocusRequester.requestFocus() }
                         }
-                    }
-                    chip
-                },
-                value = value,
-                onValueChange = onValueChange,
-                enabled = enabled,
-                readOnly = readOnly,
-                isError = isError,
-                textStyle = textStyle,
-                colors = colors,
-                keyboardOptions = keyboardOptions,
-                focusRequester = textFieldFocusRequester,
-                interactionSource = interactionSource,
-                onFocusChange = { isFocused ->
-                    if (isFocused) {
                         state.updateFocusedChip(null)
-                    }
-                },
-                modifier = Modifier
-                    .padding(top = chipVerticalSpacing)
-                    .bringIntoViewRequester(bringLastIntoViewRequester.value),
-            )
+                    },
+                    onChipClick = onChipClick,
+                    onChipLongClick = onChipLongClick,
+                    textStyle = textStyle,
+                    chipStyle = chipStyle,
+                    chipLeadingIcon = chipLeadingIcon,
+                    chipTrailingIcon = chipTrailingIcon,
+                    bringLastIntoViewRequester = bringLastIntoViewRequester,
+                )
+
+                Input(
+                    state = state,
+                    onSubmit = {
+                        val chip = onSubmit(it)
+                        if (chip != null) {
+                            scope.launch {
+                                awaitFrame()
+                                bringLastIntoViewRequester.value.bringIntoView()
+                                state.focusTextField()
+                            }
+                        }
+                        chip
+                    },
+                    value = value,
+                    onValueChange = onValueChange,
+                    enabled = enabled,
+                    readOnly = readOnly,
+                    isError = isError,
+                    textStyle = textStyle,
+                    colors = colors,
+                    keyboardOptions = keyboardOptions,
+                    focusRequester = textFieldFocusRequester,
+                    interactionSource = interactionSource,
+                    onFocusChange = { isFocused ->
+                        if (isFocused) {
+                            state.updateFocusedChip(null)
+                        } else if (state.focusedChip == null) {
+                            state.clearTextFieldFocus()
+                        }
+                    },
+                    modifier = Modifier
+                        .padding(top = chipVerticalSpacing)
+                        .bringIntoViewRequester(bringLastIntoViewRequester.value),
+                )
+            }
         }
     }
 }
