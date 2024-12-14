@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -737,44 +738,53 @@ private fun <T : Chip> ChipItem(
                 onLongClick = {
                     onLongClick?.invoke()
                 }
-            ),
+            ).pointerHoverIcon(PointerIcon.Hand),
     ) {
         var canRemoveChip by remember { mutableStateOf(false) }
-        BasicTextField(
-            value = chip.textFieldValue,
-            onValueChange = filterNewLines { value, hasNewLine ->
-                chip.textFieldValue = value
-                if (hasNewLine) {
-                    onFocusNextRequest()
-                }
-            },
-            modifier = Modifier
-                .width(IntrinsicSize.Min)
-                .padding(horizontal = 8.dp, vertical = 3.dp)
-                .focusRequester(focusRequester)
-                .onFocusChanged { onFocusChange(it.isFocused) }
-                .onPreviewKeyEvent {
-                    if (it.key == Key.Backspace) {
-                        if (it.type == KeyEventType.KeyDown) {
-                            canRemoveChip = chip.text.isEmpty()
-                        } else if (it.type == KeyEventType.KeyUp) {
-                            if (canRemoveChip) {
-                                onRemoveRequest()
-                                return@onPreviewKeyEvent true
-                            }
+
+        val chipModifier = Modifier
+            .padding(horizontal = 8.dp, vertical = 3.dp)
+            .focusRequester(focusRequester)
+            .onFocusChanged { onFocusChange(it.isFocused) }
+            .onPreviewKeyEvent {
+                if (it.key == Key.Backspace) {
+                    if (it.type == KeyEventType.KeyDown) {
+                        canRemoveChip = chip.text.isEmpty()
+                    } else if (it.type == KeyEventType.KeyUp) {
+                        if (canRemoveChip) {
+                            onRemoveRequest()
+                            return@onPreviewKeyEvent true
                         }
                     }
-                    false
+                }
+                false
+            }
+        if (!editable) {
+            BasicText(
+                text = chip.textFieldValue.text,
+                modifier = chipModifier,
+                style = chipTextStyle,
+            )
+        } else {
+            BasicTextField(
+                value = chip.textFieldValue,
+                onValueChange = filterNewLines { value, hasNewLine ->
+                    chip.textFieldValue = value
+                    if (hasNewLine) {
+                        onFocusNextRequest()
+                    }
                 },
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-            keyboardActions = KeyboardActions(onDone = { onFocusNextRequest() }),
-            singleLine = false,
-            enabled = !readOnly && enabled,
-            readOnly = readOnly || !enabled,
-            textStyle = chipTextStyle,
-            interactionSource = interactionSource,
-            cursorBrush = SolidColor(cursorColor),
-        )
+                modifier = Modifier.width(IntrinsicSize.Min).then(chipModifier),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = { onFocusNextRequest() }),
+                singleLine = false,
+                enabled = !readOnly && enabled,
+                readOnly = readOnly || !enabled,
+                textStyle = chipTextStyle,
+                interactionSource = interactionSource,
+                cursorBrush = SolidColor(cursorColor),
+            )
+        }
     }
 }
 
